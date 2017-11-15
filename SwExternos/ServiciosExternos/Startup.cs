@@ -7,12 +7,11 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using SwExternos.Interfaces;
-using SwExternos.Servicios;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+using ServiciosExternos.Interfaces;
+using ServiciosExternos.Servicios;
+using ServiciosExternos.Utils;
 
-namespace SwExternos
+namespace ServiciosExternos
 {
     public class Startup
     {
@@ -32,9 +31,8 @@ namespace SwExternos
         public void ConfigureServices(IServiceCollection services)
         {
             // Add framework services.
-
-           
-            services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddSingleton<IApiServicio, ApiServicio>();
+            WebApp.BasseAdrees = Configuration.GetSection("HostServicioSeguridad").Value;
             services.AddMvc();
         }
 
@@ -44,8 +42,24 @@ namespace SwExternos
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
-            app.UseMvc();
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+                app.UseBrowserLink();
+            }
+            else
+            {
+                app.UseExceptionHandler("/Home/Error");
+            }
 
+            app.UseStaticFiles();
+
+            app.UseMvc(routes =>
+            {
+                routes.MapRoute(
+                    name: "default",
+                    template: "{controller=Home}/{action=Index}/{id?}");
+            });
         }
     }
 }

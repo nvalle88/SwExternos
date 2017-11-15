@@ -5,13 +5,13 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
 using System.Security.Cryptography;
-using SwExternos.Utils;
-using SwExternos.Interfaces;
+using ServiciosExternos.Utils;
+using ServiciosExternos.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using SwExternos.Servicios;
+using ServiciosExternos.Servicios;
 
-namespace SwExternos.Controllers
+namespace ServiciosExternos.Controllers
 {
     [Produces("application/json")]
     [Route("api/Credenciales")]
@@ -20,10 +20,11 @@ namespace SwExternos.Controllers
 
      
         private IConfiguration Configuration;
+        private IApiServicio apiServicio;
 
         public ServiciosExternosController(IApiServicio apiServicio)
         {
-
+            this.apiServicio = apiServicio;
 
         }
         // GET: api/Adscpassws
@@ -45,9 +46,9 @@ namespace SwExternos.Controllers
             }
 
 
-            var response = await ApiServicio.ObtenerElementoAsync1<Response>(login,
-                                                              new Uri(Configuration.GetSection("HostServicioSeguridad").Value),
-                                                              "/api/Adscpassws/Login");
+            var response = await apiServicio.ObtenerElementoAsync1<Response>(login,
+                                                              new Uri(WebApp.BasseAdrees),
+                                                              "api/Adscpassws/Login");
 
             if (!response.IsSuccess)
             {
@@ -71,7 +72,7 @@ namespace SwExternos.Controllers
                 Aplicacion=login.Aplicacion,
                 Token = Convert.ToString(guidUsuario),
             };
-            var salvarToken = await ApiServicio.InsertarAsync<Response>(permisoUsuario, new Uri(Configuration.GetSection("HostServicioSeguridad").Value), "/api/Adscpassws/SalvarTokenSwExternos");
+            var salvarToken = await apiServicio.InsertarAsync<Response>(permisoUsuario, new Uri(WebApp.BasseAdrees), "api/Adscpassws/SalvarTokenSwExternos");
 
 
             return new Utils.Response
@@ -96,11 +97,11 @@ namespace SwExternos.Controllers
                 }
 
 
-                var respuesta =await ApiServicio.ObtenerElementoAsync1<Response>(permisoUsuario, new Uri(Configuration.GetSection("HostServicioSeguridad").Value), "/api/Adscpassws/ConsumirSwExterno");
+                var respuesta =await apiServicio.ObtenerElementoAsync1<Response>(permisoUsuario, new Uri(WebApp.BasseAdrees), "/api/Adscpassws/ConsumirSwExterno");
 
                 if (respuesta.IsSuccess)
                 {
-                  return Json(await ApiServicio.ConsumirServicio(permisoUsuario.parametros, permisoUsuario.Uri));
+                  return Json(await apiServicio.ConsumirServicio(permisoUsuario.parametros, permisoUsuario.Uri));
                 }
 
                 
