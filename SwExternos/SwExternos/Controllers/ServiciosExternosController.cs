@@ -66,9 +66,10 @@ namespace SwExternos.Controllers
             var permisoUsuario = new PermisoUsuario
             {
                 Usuario = usuario.AdpsLogin,
+                Aplicacion=login.Aplicacion,
                 Token = Convert.ToString(guidUsuario),
             };
-            var salvarToken = await apiServicio.InsertarAsync<Response>(permisoUsuario, new Uri(Configuration.GetSection("HostServicioSeguridad").Value), "/api/Adscpassws/SalvarToken");
+            var salvarToken = await apiServicio.InsertarAsync<Response>(permisoUsuario, new Uri(Configuration.GetSection("HostServicioSeguridad").Value), "/api/Adscpassws/SalvarTokenSwExternos");
 
 
             return new Utils.Response
@@ -79,15 +80,36 @@ namespace SwExternos.Controllers
             };
         }
 
-        public async Task<Response> ConsumirServicios(PermisoUsuario permisoUsuario)
+        // POST: api/Credenciales
+        [HttpPost]
+        [Route("ConsumirServicios")]
+        public async Task<JsonResult> ConsumirServicios([FromBody]PermisoUsuario permisoUsuario)
         {
-            var respuesta = apiServicio.ObtenerElementoAsync1<Response>(permisoUsuario, new Uri(Configuration.GetSection("HostServicioSeguridad").Value), "/api/Adscpassws/TienePermiso");
-
-            if (respuesta.Result.IsSuccess)
+            try
             {
-                return null;
+
+                if (string.IsNullOrEmpty(permisoUsuario.Usuario) || string.IsNullOrEmpty(permisoUsuario.Token) || string.IsNullOrEmpty(permisoUsuario.Uri) || permisoUsuario.parametros==null)
+                {
+                    Json(false);
+                }
+
+
+                var respuesta =await apiServicio.ObtenerElementoAsync1<Response>(permisoUsuario, new Uri(Configuration.GetSection("HostServicioSeguridad").Value), "/api/Adscpassws/ConsumirSwExterno");
+
+                if (respuesta.IsSuccess)
+                {
+                  return Json(await apiServicio.ConsumirServicio(permisoUsuario.parametros, permisoUsuario.Uri));
+                }
+
+                
             }
-            return null;
+            catch (Exception ex)
+            {
+                Json(false);
+
+            }
+            return Json(false);
         }
+        
     }
 }

@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using SwExternos.Interfaces;
+using SwExternos.Servicios;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace SwExternos
 {
@@ -28,6 +32,9 @@ namespace SwExternos
         public void ConfigureServices(IServiceCollection services)
         {
             // Add framework services.
+
+            services.AddSingleton<IApiServicio, ApiServicio>();
+            services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddMvc();
         }
 
@@ -38,6 +45,12 @@ namespace SwExternos
             loggerFactory.AddDebug();
 
             app.UseMvc();
+            app.UseMvc(routes =>
+            {
+                routes.MapRoute(
+                    name: "default",
+                    template: "{controller=Home}/{action=Index}/{id?}");
+            });
         }
     }
 }
