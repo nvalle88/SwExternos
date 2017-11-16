@@ -10,7 +10,5 @@ namespace ServiciosExternos.Utils
 
         public string Contrasena { get; set; }
 
-        public string Aplicacion { get; set; }
-
     }
 }

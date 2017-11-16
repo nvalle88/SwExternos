@@ -11,6 +11,6 @@ namespace ServiciosExternos.Interfaces
         Task<Response> InsertarAsync<T>(T model, Uri baseAddress, string url);
         Task<Response> InsertarAsync<T>(object model, Uri baseAddress, string url);
         Task<T> ObtenerElementoAsync1<T>(object model, Uri baseAddress, string url) where T : class;
-        Task<object> ConsumirServicio(PermisoUsuario model, Uri baseAddress, string url);
+        Task<object> ConsumirServicio(ConsumirServicio model, Uri baseAddress, string url);
     }
 }

@@ -17,7 +17,6 @@ namespace ServiciosExternos.Controllers
     [Route("api/Credenciales")]
     public class ServiciosExternosController : Controller
     {
-
      
         private IConfiguration Configuration;
         private IApiServicio apiServicio;
@@ -28,23 +27,24 @@ namespace ServiciosExternos.Controllers
 
         }
         // GET: api/Adscpassws
-      
 
-        [HttpPost]
-        [Route("Login")]
-        public async Task<Response> Login([FromBody] Login login)
+
+
+        private async Task<ConsumirServicio> LoginAsync(ConsumirServicio consumirServicio)
         {
-            if (string.IsNullOrEmpty(login.Usuario) || string.IsNullOrEmpty(login.Contrasena))
+            if (string.IsNullOrEmpty(consumirServicio.Usuario) || string.IsNullOrEmpty(consumirServicio.Contrasena))
             {
-                return new Utils.Response
+                return new ConsumirServicio
                 {
-                    IsSuccess = false,
-                    Message = Mensaje.UsuarioIncorrecto,
-                    Resultado=null,
-
+                   Satisfactorio=false,
                 };
             }
 
+            var login = new Login 
+                { 
+                Contrasena=consumirServicio.Contrasena,
+                Usuario=consumirServicio.Usuario,
+                };
 
             var response = await apiServicio.ObtenerElementoAsync1<Response>(login,
                                                               new Uri(WebApp.BasseAdrees),
@@ -52,67 +52,144 @@ namespace ServiciosExternos.Controllers
 
             if (!response.IsSuccess)
             {
-                return new Utils.Response
-                {
-                    IsSuccess=false,
-                    Message=Mensaje.UsuarioIncorrecto,
-                    Resultado=null,
-
-                };
+                return new ConsumirServicio { Satisfactorio = false };
             }
 
-            var usuario = JsonConvert.DeserializeObject<Adscpassw>(response.Resultado.ToString());
+            consumirServicio.Satisfactorio = true;
+            return consumirServicio;
 
-            Guid guidUsuario;
-            guidUsuario = Guid.NewGuid();
+        }
 
-            var permisoUsuario = new PermisoUsuario
+        private async Task<ConsumirServicio> SalvarToken(ConsumirServicio consumirServicio)
+        {
+            consumirServicio.Token = Convert.ToString(Guid.NewGuid());
+
+            var salvarToken = await apiServicio.InsertarAsync<Response>(consumirServicio, new Uri(WebApp.BasseAdrees), "api/Adscpassws/SalvarTokenSwExternos");
+
+            if (!salvarToken.IsSuccess)
             {
-                Usuario = usuario.AdpsLogin,
-                Aplicacion=login.Aplicacion,
-                Token = Convert.ToString(guidUsuario),
-            };
-            var salvarToken = await apiServicio.InsertarAsync<Response>(permisoUsuario, new Uri(WebApp.BasseAdrees), "api/Adscpassws/SalvarTokenSwExternos");
+                return new ConsumirServicio { Satisfactorio =false};
+            }
+            consumirServicio.Satisfactorio = true;
+            return consumirServicio;
 
+        }
 
-            return new Utils.Response
+        private async Task<ConsumirServicio> TieneAcceso(ConsumirServicio consumirServicio)
+        {
+            consumirServicio.Token = Convert.ToString(Guid.NewGuid());
+
+            var salvarToken = await apiServicio.ObtenerElementoAsync1<Response>(consumirServicio, new Uri(WebApp.BasseAdrees), "api/Adscpassws/TieneAcceso");
+
+            if (!salvarToken.IsSuccess)
             {
-                IsSuccess=true,
-                Message=Mensaje.Satisfactorio,
-                Resultado=permisoUsuario,
-            };
+                return new ConsumirServicio { Satisfactorio = false };
+            }
+            consumirServicio.Satisfactorio = true;
+            return consumirServicio;
+
+        }
+
+        private async Task<ConsumirServicio> ValidarPermisoToken(ConsumirServicio consumirServicio)
+        {
+
+            var respuesta = await apiServicio.ObtenerElementoAsync1<Response>(consumirServicio, new Uri(WebApp.BasseAdrees), "api/Adscpassws/TienePermisoSwExterno");
+
+            if (!respuesta.IsSuccess)
+            {
+                return new ConsumirServicio { Satisfactorio = false };
+            }
+            consumirServicio.Satisfactorio = true;
+            return consumirServicio;
+
+        }
+
+        private async Task<JsonResult> Consumir(ConsumirServicio consumirServicio)
+        {
+            var a = Json(await apiServicio.ConsumirServicio(consumirServicio, new Uri(WebApp.BasseAdrees), "api/Adscpassws/ConsumirSwExterno"));
+
+            if (a!=null)
+            {
+                return a;
+            }
+            return Json(false);
+            
+
+        }
+
+        [HttpPost]
+        [Route("ConsumirServicios")]
+        public async Task<JsonResult> ConsumirServicios([FromBody]ConsumirServicio consumirServicio)
+        {
+
+            if (string.IsNullOrEmpty(consumirServicio.Usuario) || string.IsNullOrEmpty(consumirServicio.Token) ||
+                           string.IsNullOrEmpty(consumirServicio.NombreServicio))
+            {
+                return Json(false);
+            }
+
+
+            consumirServicio =await ValidarPermisoToken(consumirServicio);
+
+            if (!consumirServicio.Satisfactorio)
+            {
+                return Json(false);
+            }
+
+            var json = await Consumir(consumirServicio);
+
+            if (json !=null)
+            {
+                return Json(json.Value);
+            }
+
+            return Json(false);
+            
         }
 
         // POST: api/Credenciales
         [HttpPost]
-        [Route("ConsumirServicios")]
-        public async Task<JsonResult> ConsumirServicios([FromBody]PermisoUsuario permisoUsuario)
+        [Route("Validar")]
+        public async Task<JsonResult> Validar([FromBody]ConsumirServicio consumirServicio)
         {
+
+
             try
             {
+                if (string.IsNullOrEmpty(consumirServicio.Usuario) || string.IsNullOrEmpty(consumirServicio.Contrasena) ||
+                            string.IsNullOrEmpty(consumirServicio.NombreServicio))
+                {
+                    return Json(false);
+                }
 
-                if (string.IsNullOrEmpty(permisoUsuario.Usuario) || string.IsNullOrEmpty(permisoUsuario.Token) || string.IsNullOrEmpty(permisoUsuario.NombreServicio))
+                consumirServicio = await LoginAsync(consumirServicio);
+
+                if (!consumirServicio.Satisfactorio)
+                {
+                    return Json(false);
+                }
+
+                consumirServicio = await TieneAcceso(consumirServicio);
+
+                if (!consumirServicio.Satisfactorio)
+                {
+                    return Json(false);
+                }
+
+                consumirServicio = await SalvarToken(consumirServicio);
+
+                if (!consumirServicio.Satisfactorio)
                 {
                     Json(false);
                 }
 
-
-                var respuesta =await apiServicio.ObtenerElementoAsync1<Response>(permisoUsuario, new Uri(WebApp.BasseAdrees), "api/Adscpassws/TienePermisoSwExterno");
-
-                if (respuesta.IsSuccess)
-                {
-                  var a = Json(await apiServicio.ConsumirServicio(permisoUsuario,new Uri(WebApp.BasseAdrees), "api/Adscpassws/ConsumirSwExterno"));
-                    return a;
-                }
-
-                
+                return Json(consumirServicio.Token.ToString());
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Json(false);
 
+                return Json(false);
             }
-            return Json(false);
         }
         
     }
