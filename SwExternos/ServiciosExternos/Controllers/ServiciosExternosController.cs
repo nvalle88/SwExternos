@@ -91,17 +91,18 @@ namespace ServiciosExternos.Controllers
             try
             {
 
-                if (string.IsNullOrEmpty(permisoUsuario.Usuario) || string.IsNullOrEmpty(permisoUsuario.Token) || string.IsNullOrEmpty(permisoUsuario.Uri) || permisoUsuario.parametros==null)
+                if (string.IsNullOrEmpty(permisoUsuario.Usuario) || string.IsNullOrEmpty(permisoUsuario.Token) || string.IsNullOrEmpty(permisoUsuario.NombreServicio))
                 {
                     Json(false);
                 }
 
 
-                var respuesta =await apiServicio.ObtenerElementoAsync1<Response>(permisoUsuario, new Uri(WebApp.BasseAdrees), "/api/Adscpassws/ConsumirSwExterno");
+                var respuesta =await apiServicio.ObtenerElementoAsync1<Response>(permisoUsuario, new Uri(WebApp.BasseAdrees), "api/Adscpassws/TienePermisoSwExterno");
 
                 if (respuesta.IsSuccess)
                 {
-                  return Json(await apiServicio.ConsumirServicio(permisoUsuario.parametros, permisoUsuario.Uri));
+                  var a = Json(await apiServicio.ConsumirServicio(permisoUsuario,new Uri(WebApp.BasseAdrees), "api/Adscpassws/ConsumirSwExterno"));
+                    return a;
                 }
 
                 
