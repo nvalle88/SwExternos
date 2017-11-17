@@ -70,7 +70,10 @@ namespace ServiciosExternos.Controllers
             {
                 return new ConsumirServicio { Satisfactorio =false};
             }
+
+            var token = JsonConvert.DeserializeObject<Adsctoken>(salvarToken.Resultado.ToString());
             consumirServicio.Satisfactorio = true;
+            consumirServicio.Id = token.AdtoId;
             return consumirServicio;
 
         }
@@ -180,10 +183,15 @@ namespace ServiciosExternos.Controllers
 
                 if (!consumirServicio.Satisfactorio)
                 {
-                    Json(false);
+                  return  Json(false);
                 }
 
-                return Json(consumirServicio.Token.ToString());
+                var respusta = new RespuestaToken
+                {
+                    Id = consumirServicio.Id,
+                    Token = consumirServicio.Token,
+                };
+                return Json(respusta);
             }
             catch (Exception)
             {
