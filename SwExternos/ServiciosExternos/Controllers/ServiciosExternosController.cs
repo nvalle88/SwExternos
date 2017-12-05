@@ -28,23 +28,22 @@ namespace ServiciosExternos.Controllers
         }
         // GET: api/Adscpassws
 
-
-
+        #region Métodos
         private async Task<ConsumirServicio> LoginAsync(ConsumirServicio consumirServicio)
         {
             if (string.IsNullOrEmpty(consumirServicio.Usuario) || string.IsNullOrEmpty(consumirServicio.Contrasena))
             {
                 return new ConsumirServicio
                 {
-                   Satisfactorio=false,
+                    Satisfactorio = false,
                 };
             }
 
-            var login = new Login 
-                { 
-                Contrasena=consumirServicio.Contrasena,
-                Usuario=consumirServicio.Usuario,
-                };
+            var login = new Login
+            {
+                Contrasena = consumirServicio.Contrasena,
+                Usuario = consumirServicio.Usuario,
+            };
 
             var response = await apiServicio.ObtenerElementoAsync1<Response>(login,
                                                               new Uri(WebApp.BasseAdrees),
@@ -64,11 +63,11 @@ namespace ServiciosExternos.Controllers
         {
             consumirServicio.Token = Convert.ToString(Guid.NewGuid());
 
-            var salvarToken = await apiServicio.InsertarAsync<Response>(consumirServicio, new Uri(WebApp.BasseAdrees), "api/Adscpassws/SalvarTokenSwExternos");
+            var salvarToken = await apiServicio.InsertarAsync<Response>(consumirServicio, new Uri(WebApp.BasseAdrees), "/api/Adscpassws/SalvarTokenSwExternos");
 
             if (!salvarToken.IsSuccess)
             {
-                return new ConsumirServicio { Satisfactorio =false};
+                return new ConsumirServicio { Satisfactorio = false };
             }
 
             var token = JsonConvert.DeserializeObject<Adsctoken>(salvarToken.Resultado.ToString());
@@ -109,16 +108,19 @@ namespace ServiciosExternos.Controllers
 
         private async Task<JsonResult> Consumir(ConsumirServicio consumirServicio)
         {
-            var a = Json(await apiServicio.ConsumirServicio(consumirServicio, new Uri(WebApp.BasseAdrees), "api/Adscpassws/ConsumirSwExterno"));
+            var a = Json(await apiServicio.ConsumirServicio(consumirServicio, new Uri(WebApp.BasseAdrees), "/api/Adscpassws/ConsumirSwExterno"));
 
-            if (a!=null)
+            if (a != null)
             {
                 return a;
             }
             return Json(false);
-            
+
 
         }
+        #endregion
+
+        #region Servicios
 
         [HttpPost]
         [Route("ConsumirServicios")]
@@ -132,7 +134,7 @@ namespace ServiciosExternos.Controllers
             }
 
 
-            consumirServicio =await ValidarPermisoToken(consumirServicio);
+            consumirServicio = await ValidarPermisoToken(consumirServicio);
 
             if (!consumirServicio.Satisfactorio)
             {
@@ -141,13 +143,13 @@ namespace ServiciosExternos.Controllers
 
             var json = await Consumir(consumirServicio);
 
-            if (json !=null)
+            if (json != null)
             {
                 return Json(json.Value);
             }
 
             return Json(false);
-            
+
         }
 
         // POST: api/Credenciales
@@ -183,7 +185,7 @@ namespace ServiciosExternos.Controllers
 
                 if (!consumirServicio.Satisfactorio)
                 {
-                  return  Json(false);
+                    return Json(false);
                 }
 
                 var respusta = new RespuestaToken
@@ -193,12 +195,14 @@ namespace ServiciosExternos.Controllers
                 };
                 return Json(respusta);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
                 return Json(false);
             }
-        }
-        
+        } 
+
+        #endregion
+
     }
 }
